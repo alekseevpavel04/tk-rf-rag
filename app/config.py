@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     llm_api_key: str = "ollama"
     llm_temperature: float = 0.0
     llm_timeout: float = 120.0
+    # false: model's chat template has no system role -> instructions are merged into the user message
+    llm_system_role: bool = True
 
     embedding_model: str = "intfloat/multilingual-e5-small"
 

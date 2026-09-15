@@ -197,9 +197,14 @@ async def main() -> None:
         f"Дата прогона: {datetime.now():%Y-%m-%d %H:%M}",
         f"Вопросов: {len(questions)} (с ответом: {n_answerable}, без ответа: {len(questions) - n_answerable})",
         f"Эмбеддинги: {settings.embedding_model}; хранилище: {args.store}",
-        f"LLM (ответ и судья): {settings.llm_model}" if with_llm else "LLM: не использовалась (--retrieval-only)",
+        (
+            f"LLM (ответ и судья): {settings.llm_model}, temperature={settings.llm_temperature}, "
+            f"system role: {'да' if settings.llm_system_role else 'нет (инструкции в user-сообщении)'}"
+        )
+        if with_llm
+        else "LLM: не использовалась (--retrieval-only)",
         f"Retrieval: {RETRIEVE_CHUNKS} фрагментов → уникальные статьи → метрики по топ-5 статей; генерация: top_k={GEN_TOP_K}",
-        f"Машина: {platform.system()} {platform.release()}, Python {platform.python_version()}",
+        f"ОС: {platform.system()} {platform.version()}, Python {platform.python_version()}",
     ]
     if with_llm:
         meta.append("Нераспознанных ответов судьи (засчитаны как 0): " + ", ".join(f"{r.config}: {r.judge_unparsed}" for r in rows))
