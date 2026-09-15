@@ -21,6 +21,9 @@ data/index/
 data/processed/
 qdrant_storage/
 
+# Claude Code local session files
+.claude/
+
 # IDE / OS
 .vscode/
 .idea/
