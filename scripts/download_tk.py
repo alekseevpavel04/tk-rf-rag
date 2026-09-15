@@ -28,8 +28,9 @@ from bs4 import BeautifulSoup
 
 BASE = "https://legalacts.ru"
 TOC_URL = f"{BASE}/kodeks/TK-RF/"
-ARTICLE_HREF = re.compile(r"^/kodeks/TK-RF/[^\"]*/statja-[\d\-]+/$")
-CHAPTER_HREF = re.compile(r"/glava-[\d\-]+/$")
+# Article numbers may contain dots or dashes: statja-81/, statja-22.1/, statja-22-1/
+ARTICLE_HREF = re.compile(r"^/kodeks/TK-RF/.*/statja-[^/]+/$")
+CHAPTER_HREF = re.compile(r"/glava-[^/]+/$")
 
 
 def fetch(client: httpx.Client, url: str, retries: int = 3) -> str:
@@ -46,6 +47,12 @@ def fetch(client: httpx.Client, url: str, retries: int = 3) -> str:
     raise RuntimeError("unreachable")
 
 
+def _clean(text: str) -> str:
+    # get_text() without a separator keeps "законом." intact (inline <a> tags);
+    # whitespace (incl. non-breaking spaces) is then collapsed.
+    return " ".join(text.split())
+
+
 def article_links(toc_html: str) -> list[str]:
     soup = BeautifulSoup(toc_html, "html.parser")
     seen: dict[str, None] = {}
@@ -60,16 +67,16 @@ def parse_article_page(html: str) -> tuple[str, str, list[str]]:
     h1 = soup.find("h1")
     if h1 is None:
         raise ValueError("no <h1> on article page")
-    article_header = " ".join(h1.get_text(" ", strip=True).split())
+    article_header = _clean(h1.get_text())
 
     chapter_link = soup.find("a", href=CHAPTER_HREF, string=re.compile(r"^\s*Глава"))
-    chapter_header = " ".join(chapter_link.get_text(" ", strip=True).split()) if chapter_link else ""
+    chapter_header = _clean(chapter_link.get_text()) if chapter_link else ""
 
     body = soup.find("div", class_="main-center-block-article-text")
     paragraphs: list[str] = []
     if body is not None:
         for p in body.find_all("p"):
-            text = " ".join(p.get_text(" ", strip=True).split())
+            text = _clean(p.get_text())
             if text:
                 paragraphs.append(text)
     return chapter_header, article_header, paragraphs
