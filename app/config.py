@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     chunk_overlap: int = 150
 
     top_k: int = 5
+    min_score: float = 0.0  # hits below this cosine similarity are dropped
 
 
 @lru_cache
