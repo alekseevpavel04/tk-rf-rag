@@ -11,6 +11,9 @@ venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Local model/pip caches (kept on drive D inside the project)
+.cache/
 *.egg-info/
 
 # Data artifacts (raw law text is kept, indexes are rebuilt)
