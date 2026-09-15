@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     faiss_dir: str = "data/index/faiss"
 
     raw_text_path: str = "data/raw/tk_rf.txt"
-    chunk_size: int = 1000
-    chunk_overlap: int = 150
+    chunk_size: int = 500  # chosen by eval: see eval/results.md
+    chunk_overlap: int = 75
 
     top_k: int = 5
     min_score: float = 0.0  # hits below this cosine similarity are dropped
