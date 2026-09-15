@@ -47,6 +47,23 @@ def test_repealed_articles_are_skipped_by_default_and_kept_on_request():
     assert "81.1" in [a.number for a in kept]
 
 
+def test_article_numbers_with_dash():
+    raw = (
+        "Глава 53.1. Заемный труд\n\n"
+        "Статья 341.1. Общие положения\nТекст.\n\n"
+        "Статья 341.1-1. Организации, имеющие право\nТекст.\n\n"
+        "Статья 348.11-1. Дополнительные основания\nТекст.\n"
+    )
+    articles = parse_articles(raw)
+    assert [a.number for a in articles] == ["341.1", "341.1-1", "348.11-1"]
+    assert articles[1].title == "Организации, имеющие право"
+
+
+def test_repealed_article_with_body_is_skipped():
+    raw = "Глава 1. Общие\n\nСтатья 7. Утратила силу\nФедеральный закон от 22.08.2004 N 122-ФЗ\n\nСтатья 8. Действующая\nТекст.\n"
+    assert [a.number for a in parse_articles(raw)] == ["8"]
+
+
 def test_article_number_prefix_is_not_confused():
     # "Статья 3" must not match a line like "Статьями 3 и 4 ..." inside the text
     raw = "Глава 1. Общие\n\nСтатья 3. Запрещение дискриминации\nСтатьями 3 и 4 установлено ...\n"

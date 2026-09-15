@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 CHAPTER_RE = re.compile(r"^Глава\s+(\d+(?:\.\d+)?)\.\s*(.*)$")
-ARTICLE_RE = re.compile(r"^Статья\s+(\d+(?:\.\d+)*)\.\s*(.*)$")
+# numbers like 81, 22.1, 341.1-1, 348.11-1
+ARTICLE_RE = re.compile(r"^Статья\s+(\d+(?:[.\-]\d+)*)\.\s*(.*)$")
 REPEALED_RE = re.compile(r"^(Утратила силу|Исключена)", re.IGNORECASE)
 
 
@@ -32,7 +33,8 @@ def parse_articles(raw: str, skip_repealed: bool = True) -> list[Article]:
         if current is None:
             return
         current.text = "\n".join(body).strip()
-        if skip_repealed and not current.text and REPEALED_RE.match(current.title):
+        # repealed articles may still have a body with the reference to the repealing law
+        if skip_repealed and REPEALED_RE.match(current.title):
             return
         articles.append(current)
 

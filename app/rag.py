@@ -9,7 +9,7 @@ from app.store.base import SearchHit, VectorStore
 
 SNIPPET_LEN = 300
 
-_NUM = r"\d+(?:\.\d+)*"
+_NUM = r"\d+(?:[.\-]\d+)*"  # 81, 22.1, 341.1-1
 ARTICLE_REF_RE = re.compile(
     rf"(?:\bст\.|\bстать(?:я|и|е|ю|ей|ям|ях|ями))\s*({_NUM}(?:\s*(?:,|и)\s*{_NUM})*)",
     re.IGNORECASE,

@@ -64,4 +64,5 @@ def test_is_refusal():
 def test_extract_article_refs():
     text = "Срок — две недели (ст. 80 ТК РФ), см. также статьи 81 и 84.1, статью 22.1."
     assert extract_article_refs(text) == {"80", "81", "84.1", "22.1"}
+    assert extract_article_refs("по правилам ст. 341.1-1 ТК РФ") == {"341.1-1"}
     assert extract_article_refs("Без ссылок.") == set()
