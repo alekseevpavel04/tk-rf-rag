@@ -13,20 +13,24 @@ Python 3.11 · FastAPI (async) · Pydantic · sentence-transformers (`intfloat/m
 ## Как это работает
 
 ```mermaid
-flowchart LR
-    subgraph Ingest["Индексация (POST /ingest)"]
-        A[legalacts.ru] -->|scripts/download_tk.py| B[data/raw/tk_rf.txt]
-        B -->|parser| C["Статьи + метаданные<br/>номер, заголовок, глава"]
-        C -->|chunker| D["Фрагменты с перекрытием<br/>не пересекают границы статей"]
-        D -->|"e5: passage: …"| E[(Qdrant / FAISS)]
+flowchart TD
+    subgraph ingest ["POST /ingest"]
+        A["Текст ТК РФ<br/>data/raw/tk_rf.txt"] --> B["Парсер: статьи,<br/>номер, заголовок, глава"]
+        B --> C["Фрагменты 500 символов<br/>с перекрытием 75"]
+        C --> D["e5-small<br/>passage: текст"]
     end
-    subgraph Ask["Ответ (POST /ask)"]
-        Q[Вопрос] -->|"e5: query: …"| R["top-k по косинусу<br/>+ фильтр по главе"]
-        E --> R
-        R -->|нет фрагментов| X["«Не нашёл ответа в документах.»"]
-        R -->|фрагменты в теге context| L[LLM]
-        L --> O["Ответ со ссылками (ст. N ТК РФ)<br/>+ sources"]
+
+    D --> E[("Qdrant или FAISS")]
+
+    subgraph ask ["POST /ask"]
+        Q["Вопрос пользователя"] --> R["e5-small<br/>query: вопрос"]
+        R --> S["top-k по косинусу<br/>+ фильтр по главе"]
+        S -->|"ничего не найдено"| X["Отказ: не нашёл<br/>ответа в документах"]
+        S -->|"фрагменты"| L["LLM: ответ только<br/>по контексту"]
+        L --> O["Ответ со ссылками<br/>на статьи + sources"]
     end
+
+    E --> S
 ```
 
 - **Разбиение:** фрагменты собираются из абзацев до `CHUNK_SIZE` символов и перекрываются на `CHUNK_OVERLAP` символов. Фрагмент не выходит за границы статьи, в начало каждого добавляется заголовок «Статья N. Название».
