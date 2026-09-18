@@ -6,6 +6,16 @@
 
 Официальный текст закона не охраняется авторским правом (ГК РФ, ст. 1259, п. 6).
 
+## Как это выглядит
+
+Ответы сервиса на вопросы из набора оценки. Тексты ответов модели приведены без правок, из прогона 15.09.2026 ([`eval/runs/qdrant_500_nofilter.jsonl`](eval/runs/qdrant_500_nofilter.jsonl)).
+
+![Ответы со ссылками на статьи ТК РФ](docs/screenshots/answers.png)
+
+Вопросы, ответа на которые в кодексе нет, и итоговые метрики:
+
+![Отказы на вопросы вне кодекса и метрики качества](docs/screenshots/refusals-and-metrics.png)
+
 ## Стек
 
 Python 3.11 · FastAPI (async) · Pydantic · sentence-transformers (`intfloat/multilingual-e5-small`) · Qdrant / FAISS (переключаются в конфиге) · любой OpenAI-совместимый LLM API (облако, Ollama, llama.cpp) · Docker Compose · pytest
