@@ -15,14 +15,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.config import get_settings  # noqa: E402
 from app.embeddings import get_embedder  # noqa: E402
 from app.ingest.pipeline import build_index  # noqa: E402
-from app.store import create_store  # noqa: E402
+from app.store import create_store, index_name  # noqa: E402
 
 
 def main() -> None:
     settings = get_settings()
     parser = argparse.ArgumentParser()
     parser.add_argument("--store", choices=["qdrant", "faiss"], default=settings.vector_store)
-    parser.add_argument("--collection", default=settings.qdrant_collection)
+    parser.add_argument("--collection", default=index_name(settings), help="default: index of EMBEDDING_MODEL")
     parser.add_argument("--chunk-size", type=int, default=settings.chunk_size)
     parser.add_argument("--overlap", type=int, default=settings.chunk_overlap)
     args = parser.parse_args()

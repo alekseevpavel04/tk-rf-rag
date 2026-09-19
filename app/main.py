@@ -42,12 +42,15 @@ app = FastAPI(title="TK RF RAG", description="Вопросы-ответы по �
 
 @app.get("/health", response_model=HealthResponse)
 async def health(service: RAGService = Depends(get_service)) -> HealthResponse:
+    model = getattr(service.embedder, "model_name", "")
     try:
         count = await asyncio.to_thread(service.store.count)
     except Exception as exc:  # vector DB is down
         logger.warning("vector store unavailable: %s", exc)
-        return HealthResponse(status="vector_store_unavailable", vector_store=service.store.name, indexed_chunks=0)
-    return HealthResponse(status="ok", vector_store=service.store.name, indexed_chunks=count)
+        return HealthResponse(
+            status="vector_store_unavailable", vector_store=service.store.name, indexed_chunks=0, embedding_model=model
+        )
+    return HealthResponse(status="ok", vector_store=service.store.name, indexed_chunks=count, embedding_model=model)
 
 
 @app.post("/ingest", response_model=IngestResponse)
