@@ -18,6 +18,7 @@ Usage:
     python eval/run_eval.py                         # full grid, Qdrant, with LLM
     python eval/run_eval.py --retrieval-only        # no LLM needed
     python eval/run_eval.py --store faiss --chunk-sizes 1000 --retrieval-only
+    python eval/run_eval.py --store faiss --chunk-sizes 500 --retrieval-only         --embedding-model alekseevpavel04/multilingual-e5-small-ru-law   # fine-tuned model
 """
 
 import argparse
@@ -34,14 +35,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.config import get_settings  # noqa: E402
+from app.config import DEFAULT_EMBEDDING_MODEL, get_settings  # noqa: E402
 from app.embeddings import get_embedder  # noqa: E402
 from app.ingest.parser import load_articles  # noqa: E402
 from app.ingest.pipeline import build_index  # noqa: E402
 from app.llm import OpenAICompatibleLLM  # noqa: E402
 from app.prompts import build_judge_messages  # noqa: E402
 from app.rag import RAGService, extract_article_refs, is_refusal, unique_articles  # noqa: E402
-from app.store import create_store  # noqa: E402
+from app.store import create_store, index_name  # noqa: E402
 
 RETRIEVE_CHUNKS = 20
 GEN_TOP_K = 5
@@ -161,6 +162,8 @@ async def main() -> None:
     parser.add_argument("--retrieval-only", action="store_true")
     parser.add_argument("--no-filter-runs", action="store_true", help="skip chapter-filter runs")
     parser.add_argument("--out", default=str(ROOT / "eval" / "results_latest.md"))
+    parser.add_argument("--embedding-model", default=settings.embedding_model, help="HF id or local path")
+    parser.add_argument("--run-tag", default="", help="suffix for eval/runs/*.jsonl, so committed runs are kept")
     args = parser.parse_args()
 
     with_llm = not args.retrieval_only
@@ -170,8 +173,12 @@ async def main() -> None:
     if missing:
         raise SystemExit(f"gold articles not found in the corpus: {missing}")
 
-    settings = settings.model_copy(update={"vector_store": args.store})
+    settings = settings.model_copy(update={"vector_store": args.store, "embedding_model": args.embedding_model})
     embedder = get_embedder(settings.embedding_model)
+    # runs of a non-default model / question set get a suffix, so committed runs are not overwritten
+    model_tag = "" if settings.embedding_model == DEFAULT_EMBEDDING_MODEL else "__" + index_name(settings).split("__", 1)[1]
+    qset = Path(args.questions).stem
+    qset_tag = ("" if qset == "questions" else f"__{qset}") + (f"__{args.run_tag}" if args.run_tag else "")
     llm = OpenAICompatibleLLM.from_settings(settings) if with_llm else None
     runs_dir = ROOT / "eval" / "runs"
     runs_dir.mkdir(exist_ok=True)
@@ -179,14 +186,14 @@ async def main() -> None:
     rows: list[Metrics] = []
     for size in args.chunk_sizes:
         overlap = int(size * args.overlap_ratio)
-        store = create_store(settings, name=f"eval_{size}")
+        store = create_store(settings, name=f"eval_{size}{model_tag}")
         started = time.perf_counter()
         _, n_chunks = build_index(ROOT / settings.raw_text_path, embedder, store, size, overlap)
         print(f"[{args.store}] chunk_size={size} overlap={overlap}: {n_chunks} chunks, {time.perf_counter() - started:.0f}s")
         service = RAGService(embedder, store, llm, min_score=settings.min_score)
         for use_filter in [False] if args.no_filter_runs else [False, True]:
             config = f"{args.store}, {size}/{overlap}, {'фильтр по главе' if use_filter else 'без фильтра'}"
-            log_path = runs_dir / f"{args.store}_{size}_{'filter' if use_filter else 'nofilter'}.jsonl"
+            log_path = runs_dir / f"{args.store}_{size}_{'filter' if use_filter else 'nofilter'}{model_tag}{qset_tag}.jsonl"
             with log_path.open("w", encoding="utf-8") as log:
                 m = await evaluate(service, questions, chapter_of, config, n_chunks, use_filter, with_llm, log)
             rows.append(m)

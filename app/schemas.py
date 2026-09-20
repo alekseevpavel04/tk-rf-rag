@@ -30,3 +30,4 @@ class HealthResponse(BaseModel):
     status: str
     vector_store: str
     indexed_chunks: int
+    embedding_model: str = ""
