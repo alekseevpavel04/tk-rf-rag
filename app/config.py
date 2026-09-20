@@ -24,7 +24,9 @@ class Settings(BaseSettings):
 
     # HF id or a local path. Each model gets its own index (see app/store.index_name): switching the
     # model requires POST /ingest, vectors of different models are never mixed.
-    embedding_model: str = DEFAULT_EMBEDDING_MODEL
+    # Default is the fine-tuned model: it is better on hard questions and equal on the old eval set
+    # (see README "Дообученная модель"); set EMBEDDING_MODEL to DEFAULT_EMBEDDING_MODEL for the base one.
+    embedding_model: str = FINETUNED_EMBEDDING_MODEL
 
     vector_store: Literal["qdrant", "faiss"] = "qdrant"
     qdrant_url: str = "http://localhost:6333"

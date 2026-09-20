@@ -13,18 +13,22 @@ from app.main import app, get_service
 from app.store import create_store, index_name
 
 
-def test_default_model_is_base_e5_small(monkeypatch):
+def test_default_model_is_the_finetuned_one(monkeypatch):
     monkeypatch.delenv("EMBEDDING_MODEL", raising=False)
-    assert Settings(_env_file=None).embedding_model == DEFAULT_EMBEDDING_MODEL
+    assert Settings(_env_file=None).embedding_model == FINETUNED_EMBEDDING_MODEL
 
 
 def test_model_switched_by_env(monkeypatch):
-    monkeypatch.setenv("EMBEDDING_MODEL", FINETUNED_EMBEDDING_MODEL)
-    assert Settings(_env_file=None).embedding_model == FINETUNED_EMBEDDING_MODEL
+    monkeypatch.setenv("EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL)
+    assert Settings(_env_file=None).embedding_model == DEFAULT_EMBEDDING_MODEL
 
 
 def test_base_model_keeps_old_index_name():
     assert index_name(Settings(_env_file=None, embedding_model=DEFAULT_EMBEDDING_MODEL)) == "tk_rf"
+
+
+def test_finetuned_default_gets_its_own_index():
+    assert index_name(Settings(_env_file=None)) != "tk_rf"
 
 
 def test_other_models_get_their_own_index():
@@ -39,7 +43,8 @@ def test_other_models_get_their_own_index():
 
 
 def test_faiss_store_directory_follows_model(tmp_path):
-    base = Settings(_env_file=None, vector_store="faiss", faiss_dir=str(tmp_path))
+    base = Settings(_env_file=None, vector_store="faiss", faiss_dir=str(tmp_path),
+                    embedding_model=DEFAULT_EMBEDDING_MODEL)
     ft = base.model_copy(update={"embedding_model": FINETUNED_EMBEDDING_MODEL})
     assert create_store(base).directory != create_store(ft).directory
     assert create_store(ft).directory.name == index_name(ft)
