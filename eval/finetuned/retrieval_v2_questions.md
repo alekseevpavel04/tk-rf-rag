@@ -1,6 +1,6 @@
-- Дата прогона: 2026-09-20 01:03
+- Дата прогона: 2026-09-20 10:22
 - Вопросов: 30 (с ответом: 25, без ответа: 5)
-- Эмбеддинги: D:\VScode_projects\ru-law-retrieval\data\export\hf_model; хранилище: faiss
+- Эмбеддинги: alekseevpavel04/multilingual-e5-small-ru-law; хранилище: faiss
 - LLM: не использовалась (--retrieval-only)
 - Retrieval: 20 фрагментов → уникальные статьи → метрики по топ-5 статей; генерация: top_k=5
 - ОС: Windows 10.0.26200, Python 3.11.4
